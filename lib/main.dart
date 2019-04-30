@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
         title: 'MyServices',
         debugShowCheckedModeBanner: false,
         theme: new ThemeData(
-          primarySwatch: Colors.green,
+          primarySwatch: Colors.deepPurple,
         ),
         home: new HomePage());
   }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:myservicespartners/Widgets/DetailPage/DetailPage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   @override
@@ -14,6 +15,22 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String barcode = "";
 
+  Future<bool> _getUsedOrNot(String qrCode) async {
+    bool used;
+     final qr = jsonDecode(qrCode);
+    final userId = qr[0];
+    final serviceId = qr[1];
+    CollectionReference ref = Firestore.instance.collection('userServices');
+    QuerySnapshot eventsQuery = await ref.getDocuments();
+    eventsQuery.documents.forEach((document) {
+      if (document.data.containsValue(userId) &&
+          document.data.containsValue(serviceId)) {
+          used = document.data['used'];
+      }
+    });
+    return used;
+  }
+
   @override
   initState() {
     super.initState();
@@ -22,7 +39,7 @@ class _HomePageState extends State<HomePage> {
   Container _getAppBar() {
     return new Container(
       height: 60.0,
-      color: Color(0xFF43e97b),
+      color: Color(0xFF673AB7),
     );
   }
 
@@ -39,7 +56,7 @@ class _HomePageState extends State<HomePage> {
         children: <Widget>[
           new Icon(
             FontAwesomeIcons.handshake,
-            color: Color(0xFF43e97b),
+            color: Color(0xFF673AB7),
             size: 40.0,
           ),
           new Padding(
@@ -54,7 +71,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.only(left: 20.0),
             child: new Icon(
               FontAwesomeIcons.handshake,
-              color: Color(0xFF43e97b),
+              color: Color(0xFF673AB7),
               size: 40.0,
             ),
           ),
@@ -102,15 +119,7 @@ class _HomePageState extends State<HomePage> {
                               scan();
                             },
                             elevation: 4,
-                            color: Color(0xFF43e97b),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 8.0),
-                          child: Text(
-                            barcode,
-                            textAlign: TextAlign.center,
+                            color: Color(0xFF673AB7),
                           ),
                         ),
                       ],
@@ -131,9 +140,10 @@ class _HomePageState extends State<HomePage> {
     try {
       String barcode = await BarcodeScanner.scan();
       setState(() => this.barcode = barcode);
+      bool used = await _getUsedOrNot(barcode);
        Navigator.push(
     context,
-    MaterialPageRoute(builder: (context) => DetailPage(qrCode: barcode,)));
+    MaterialPageRoute(builder: (context) => DetailPage(qrCode: barcode, used: used)));
     } on PlatformException catch (e) {
       if (e.code == BarcodeScanner.CameraAccessDenied) {
         setState(() {
